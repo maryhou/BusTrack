@@ -23,17 +23,18 @@
 
 所有功能都在瀏覽器面板用模擬操作驗證過（含 touch 手勢、遷移、刪除流程）。
 
+## 部署狀態：✅ 已上線（2026-07-12）
+
+- 網站：https://maryhou.github.io/BusTrack/（GitHub Pages，main branch 根目錄）
+- Repo：https://github.com/maryhou/BusTrack（public；使用者確認 OK 後才建的）
+- 之後更新：commit → `git push` 即自動重新部署；記得 bump sw.js 的 CACHE 版號
+
 ## ⚠️ 未完成事項
 
-1. **部署未完成（重要）**：計畫是 GitHub Pages（`gh repo create BusTrack --public
-   --source . --push` → 開 Pages → `https://maryhou.github.io/BusTrack/`）。
-   使用者說「推上線」，但在執行 `gh repo create --public` 時**按了拒絕**——
-   可能對 public repo 或某個細節有顧慮。**接手時先問清楚再動**（例如要不要
-   private repo＋其他靜態託管、或改用 Cloudflare Pages）。gh CLI 已登入 maryhou。
-2. 使用者手機實際測試還沒發生（手勢門檻 110px 可能要調）。
-3. 未回覆的設計問題：路線號碼牌是深色底白字（仿公車路線牌），使用者偏好
+1. 使用者手機實際測試還沒發生（手勢門檻 110px 可能要調）。
+2. 未回覆的設計問題：路線號碼牌是深色底白字（仿公車路線牌），使用者偏好
    「忌深色大按鈕」，曾問過要不要改藍色/描邊款，尚無答案。
-4. 未來構想（使用者提過、刻意延後）：接 TDX 官方即時到站 API（需付費/金鑰，
+3. 未來構想（使用者提過、刻意延後）：接 TDX 官方即時到站 API（需付費/金鑰，
    到時要加 Cloudflare Worker 之類的代理，靜態部分不動）。
 
 ## 維護須知
