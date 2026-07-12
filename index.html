@@ -65,17 +65,24 @@ header{
 .hero{padding:26px 20px 6px}
 .hero .now{font-size:3.1rem;font-weight:800;letter-spacing:-.03em;line-height:1.05}
 .hero .now small{font-size:1.15rem;font-weight:700;color:var(--sub);margin-left:6px;letter-spacing:0}
-.dest-chip{
-  margin-top:14px;display:inline-flex;align-items:center;gap:8px;
-  background:var(--card);border:1px solid var(--line);
-  padding:9px 14px;border-radius:999px;box-shadow:var(--shadow);
-  font-weight:600;font-size:.92rem;
+.dest-tabs{
+  display:flex;gap:8px;overflow-x:auto;padding:16px 20px 2px;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;
 }
-.dest-chip svg{width:16px;height:16px;color:var(--accent)}
-.dest-chip .sep{color:var(--line)}
-.dest-chip .deadline{color:var(--accent);font-weight:700}
-.dest-chip:active{transform:scale(.97)}
-.hero .left-hint{margin-top:10px;font-size:.88rem;color:var(--sub);font-weight:500}
+.dest-tabs::-webkit-scrollbar{display:none}
+.dtab{
+  flex:none;display:inline-flex;align-items:center;gap:7px;
+  padding:9px 15px;border-radius:999px;
+  background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);
+  font-weight:700;font-size:.92rem;transition:transform .1s;
+}
+.dtab:active{transform:scale(.96)}
+.dtab svg{width:15px;height:15px}
+.dtab .t{color:var(--sub);font-weight:700;font-size:.8rem}
+.dtab.active{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 4px 14px rgba(37,99,235,.3)}
+.dtab.active .t{color:rgba(255,255,255,.8)}
+.dtab.add{color:var(--accent);background:var(--accent-soft);border-color:transparent;box-shadow:none}
+.left-hint{margin:10px 20px 0;font-size:.88rem;color:var(--sub);font-weight:500}
 .hero .left-hint b{color:var(--ink);font-weight:700}
 
 /* ---------- section ---------- */
@@ -253,15 +260,9 @@ header{
 
 <section class="hero">
   <div class="now num" id="nowClock">--:--</div>
-  <button class="dest-chip" id="destChip">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v14"/><path d="M9 9h1.5M13.5 9H15M9 13h1.5M13.5 13H15M9 21v-4h6v4"/></svg>
-    <span id="destName">公司</span>
-    <span class="sep">·</span>
-    <span class="deadline num" id="destDeadline">09:00</span>
-    <span style="color:var(--sub);font-weight:500;font-size:.82rem">前抵達</span>
-  </button>
-  <div class="left-hint" id="leftHint"></div>
 </section>
+<nav class="dest-tabs" id="destTabs"></nav>
+<div class="left-hint" id="leftHint"></div>
 
 <div class="section-head" id="listHead" style="display:none">
   <h2>我的公車</h2>
@@ -342,32 +343,47 @@ header{
 <!-- ===== settings sheet ===== -->
 <div class="sheet" id="setSheet">
   <div class="grip"></div>
-  <h3>目的地設定</h3>
+  <h3><span id="setSheetTitle">編輯目的地</span>
+    <button class="del" id="btnDelDest" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+      <span id="delDestLabel">刪除</span>
+    </button>
+  </h3>
   <div class="field">
     <label>目的地名稱</label>
-    <input type="text" id="sDest" placeholder="公司" autocomplete="off">
+    <input type="text" id="sDest" placeholder="例如 公司、回家、上課" autocomplete="off">
   </div>
   <div class="field">
-    <label>最晚抵達時間（上班時間）</label>
+    <label>最晚抵達時間</label>
     <input type="time" id="sTime" class="num">
   </div>
-  <p class="hint">每張公車卡片會用「進站時間＋車程＋步行」算出實際抵達時刻，再跟這個時間比對，告訴你搭哪班不會遲到。</p>
+  <p class="hint">每個目的地有自己的公車清單和最晚抵達時間。卡片會用「進站＋車程＋步行」算出實際抵達時刻，再跟這個時間比對。</p>
   <button class="primary" id="btnSaveSet">儲存</button>
 </div>
 
 <script>
 const $ = id => document.getElementById(id);
-const KEY = 'bustrack.v1';
+const KEY = 'bustrack.v2';
+const newId = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2,5);
 
 let state = load();
 function load(){
   try{
     const s = JSON.parse(localStorage.getItem(KEY));
-    if(s && s.settings && Array.isArray(s.buses)) return s;
+    if(s && Array.isArray(s.destinations) && s.destinations.length) return s;
   }catch(e){}
-  return { settings:{ destName:'公司', arriveBy:'09:00' }, buses:[] };
+  try{ // v1（單一目的地）自動遷移
+    const s1 = JSON.parse(localStorage.getItem('bustrack.v1'));
+    if(s1 && s1.settings){
+      const d = { id:newId('d'), name:s1.settings.destName || '公司', arriveBy:s1.settings.arriveBy || '09:00', buses:s1.buses || [] };
+      return { destinations:[d], activeDestId:d.id };
+    }
+  }catch(e){}
+  const d = { id:newId('d'), name:'公司', arriveBy:'09:00', buses:[] };
+  return { destinations:[d], activeDestId:d.id };
 }
 function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+const dest = () => state.destinations.find(d => d.id === state.activeDestId) || state.destinations[0];
 
 const fmt = ts => {
   const d = new Date(ts);
@@ -375,7 +391,7 @@ const fmt = ts => {
 };
 
 function deadlineTs(now){
-  const [h,m] = state.settings.arriveBy.split(':').map(Number);
+  const [h,m] = dest().arriveBy.split(':').map(Number);
   const d = new Date(now); d.setHours(h,m,0,0);
   return d.getTime();
 }
@@ -397,21 +413,35 @@ const ICON_ALERT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 const ICON_RENEW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"/></svg>';
 const ICON_EDIT  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>';
 const ICON_TO    = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M14 6l6 6-6 6"/></svg>';
+const ICON_HOME  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg>';
+const ICON_SCHOOL= '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9l10-5 10 5-10 5L2 9z"/><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"/><path d="M22 9v5"/></svg>';
+const ICON_BLDG  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v14"/><path d="M9 9h1.5M13.5 9H15M9 13h1.5M13.5 13H15M9 21v-4h6v4"/></svg>';
+const ICON_PLUS  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+function destIcon(name){
+  if(/家|home/i.test(name)) return ICON_HOME;
+  if(/課|學|校|補|school/i.test(name)) return ICON_SCHOOL;
+  return ICON_BLDG;
+}
 
 function render(){
   const now = Date.now();
+  const D = dest();
   $('nowClock').innerHTML = fmt(now) + '<small id="nowSec"></small>';
-  $('destName').textContent = state.settings.destName;
-  $('destDeadline').textContent = state.settings.arriveBy;
+
+  $('destTabs').innerHTML = state.destinations.map(d => `
+    <button class="dtab ${d.id === state.activeDestId ? 'active':''}" data-dest="${d.id}">
+      ${destIcon(d.name)}<span>${esc(d.name)}</span><span class="t num">${d.arriveBy}</span>
+    </button>`).join('') +
+    `<button class="dtab add" data-adddest>${ICON_PLUS}<span>新增</span></button>`;
 
   const dl = deadlineTs(now);
   const leftMin = Math.floor((dl - now)/60000);
   $('leftHint').innerHTML = leftMin >= 0
-    ? `距離最晚抵達時間還有 <b class="num">${leftMin >= 60 ? Math.floor(leftMin/60)+' 小時 '+(leftMin%60)+' 分' : leftMin+' 分鐘'}</b>`
-    : `今天的抵達時間已過 <b class="num">${Math.abs(leftMin)} 分鐘</b>`;
+    ? `距離「${esc(D.name)}」最晚抵達還有 <b class="num">${leftMin >= 60 ? Math.floor(leftMin/60)+' 小時 '+(leftMin%60)+' 分' : leftMin+' 分鐘'}</b>`
+    : `「${esc(D.name)}」今天的抵達時間已過 <b class="num">${Math.abs(leftMin)} 分鐘</b>`;
 
   const list = $('busList');
-  if(state.buses.length === 0){
+  if(D.buses.length === 0){
     $('empty').style.display = 'block';
     $('listHead').style.display = 'none';
     list.innerHTML = '';
@@ -419,9 +449,9 @@ function render(){
   }
   $('empty').style.display = 'none';
   $('listHead').style.display = 'flex';
-  $('listCount').textContent = state.buses.length + ' 條路線';
+  $('listCount').textContent = D.buses.length + ' 條路線';
 
-  const items = state.buses.map(b => ({ b, c: calc(b, now) }));
+  const items = D.buses.map(b => ({ b, c: calc(b, now) }));
   items.sort((x,y) => x.c.boardAt - y.c.boardAt);
 
   // 建議：還沒進站且準時的班次中，最晚進站的那班（可以最晚出門）
@@ -446,7 +476,7 @@ function render(){
         <div class="card-eta">${eta}</div>
         <div class="card-arrive">
           <div class="time num">${fmt(c.arriveAt)}</div>
-          <div class="lbl">抵達${esc(state.settings.destName)}</div>
+          <div class="lbl">抵達${esc(D.name)}</div>
         </div>
       </div>
       <div style="text-align:right">${pill}</div>
@@ -535,7 +565,7 @@ $('btnAdd').addEventListener('click', () => {
   $('fBoard').value = '';
   $('fAlight').value = '';
   $('fEta').value = 5;
-  const last = state.buses[state.buses.length-1];
+  const last = dest().buses[dest().buses.length-1];
   $('fRide').value = last ? last.rideMin : 20;
   $('fWalk').value = last ? last.walkMin : 5;
   openSheet($('busSheet'));
@@ -547,7 +577,7 @@ $('busList').addEventListener('click', e => {
   const edit  = e.target.closest('[data-edit]');
   const id = renew?.dataset.renew || edit?.dataset.edit;
   if(!id) return;
-  const b = state.buses.find(x => x.id === id);
+  const b = dest().buses.find(x => x.id === id);
   if(!b) return;
   editingId = id;
   $('busSheetTitle').textContent = renew ? `更新 ${b.route} 到站時間` : `編輯 ${b.route}`;
@@ -571,34 +601,73 @@ $('btnSaveBus').addEventListener('click', () => {
   const rideMin = clamp($('fRide').value, 1, 180);
   const walkMin = clamp($('fWalk').value, 0, 60);
   if(editingId){
-    const b = state.buses.find(x => x.id === editingId);
+    const b = dest().buses.find(x => x.id === editingId);
     Object.assign(b, { route, boardStop, alightStop, etaMin, rideMin, walkMin, etaSetAt: Date.now() });
   }else{
-    state.buses.push({ id: 'b'+Date.now().toString(36), route, boardStop, alightStop, etaMin, rideMin, walkMin, etaSetAt: Date.now() });
+    dest().buses.push({ id: newId('b'), route, boardStop, alightStop, etaMin, rideMin, walkMin, etaSetAt: Date.now() });
   }
   save(); closeSheets(); render();
 });
 
 $('btnDelete').addEventListener('click', () => {
   if(!editingId) return;
-  state.buses = state.buses.filter(x => x.id !== editingId);
+  dest().buses = dest().buses.filter(x => x.id !== editingId);
   save(); closeSheets(); render();
 });
 
 function clamp(v, lo, hi){ v = parseInt(v,10); if(isNaN(v)) v = lo; return Math.min(hi, Math.max(lo, v)); }
 
-/* settings */
-function openSettings(){
-  $('sDest').value = state.settings.destName;
-  $('sTime').value = state.settings.arriveBy;
+/* destinations */
+let destSheetMode = null; // 'add' 或目的地 id
+function openDestSheet(mode){
+  destSheetMode = mode;
+  const adding = mode === 'add';
+  const d = adding ? null : state.destinations.find(x => x.id === mode);
+  $('setSheetTitle').textContent = adding ? '新增目的地' : `編輯「${d.name}」`;
+  $('sDest').value = adding ? '' : d.name;
+  $('sTime').value = adding ? '09:00' : d.arriveBy;
+  $('btnDelDest').style.display = (!adding && state.destinations.length > 1) ? 'flex' : 'none';
+  $('delDestLabel').textContent = '刪除';
   openSheet($('setSheet'));
+  if(adding) setTimeout(() => $('sDest').focus(), 300);
 }
-$('btnSettings').addEventListener('click', openSettings);
-$('destChip').addEventListener('click', openSettings);
+$('btnSettings').addEventListener('click', () => openDestSheet(state.activeDestId));
+
+$('destTabs').addEventListener('click', e => {
+  const add = e.target.closest('[data-adddest]');
+  const tab = e.target.closest('[data-dest]');
+  if(add){ openDestSheet('add'); return; }
+  if(!tab) return;
+  const id = tab.dataset.dest;
+  if(id === state.activeDestId){ openDestSheet(id); return; } // 點擊當前分頁＝編輯
+  state.activeDestId = id;
+  save(); render();
+});
+
 $('btnSaveSet').addEventListener('click', () => {
-  state.settings.destName = $('sDest').value.trim() || '公司';
-  const t = $('sTime').value;
-  if(/^\d{2}:\d{2}$/.test(t)) state.settings.arriveBy = t;
+  const name = $('sDest').value.trim();
+  if(!name){ $('sDest').focus(); return; }
+  const t = /^\d{2}:\d{2}$/.test($('sTime').value) ? $('sTime').value : '09:00';
+  if(destSheetMode === 'add'){
+    const d = { id:newId('d'), name, arriveBy:t, buses:[] };
+    state.destinations.push(d);
+    state.activeDestId = d.id;
+  }else{
+    const d = state.destinations.find(x => x.id === destSheetMode);
+    if(d){ d.name = name; d.arriveBy = t; }
+  }
+  save(); closeSheets(); render();
+});
+
+$('btnDelDest').addEventListener('click', () => {
+  const d = state.destinations.find(x => x.id === destSheetMode);
+  if(!d || state.destinations.length <= 1) return;
+  if($('delDestLabel').textContent === '刪除'){ // 兩段式確認
+    $('delDestLabel').textContent = `確定刪除？（含 ${d.buses.length} 條路線）`;
+    return;
+  }
+  state.destinations = state.destinations.filter(x => x.id !== destSheetMode);
+  if(state.activeDestId === destSheetMode) state.activeDestId = state.destinations[0].id;
   save(); closeSheets(); render();
 });
 

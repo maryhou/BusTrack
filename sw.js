@@ -1,4 +1,4 @@
-const CACHE = 'bustrack-v1';
+const CACHE = 'bustrack-v2';
 const ASSETS = ['.', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon.svg'];
 
 self.addEventListener('install', e => {
