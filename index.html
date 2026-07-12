@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>BusTrack — 不遲到通勤</title>
+<meta name="theme-color" content="#F4F5F7">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>
+:root{
+  --bg:#F4F5F7;
+  --card:#FFFFFF;
+  --ink:#16181D;
+  --sub:#7A7F8C;
+  --line:#ECEDF1;
+  --accent:#2563EB;
+  --accent-soft:#EAF0FE;
+  --ok:#0A9D5C;
+  --ok-soft:#E4F6EC;
+  --late:#E5484D;
+  --late-soft:#FDEDEE;
+  --warn:#B7791F;
+  --warn-soft:#FBF3E4;
+  --radius:20px;
+  --shadow:0 1px 2px rgba(22,24,29,.04), 0 8px 24px rgba(22,24,29,.06);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{font-size:16px}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue","PingFang TC","Noto Sans TC",sans-serif;
+  background:var(--bg);color:var(--ink);
+  min-height:100dvh;
+  padding-bottom:calc(96px + env(safe-area-inset-bottom));
+}
+button{font:inherit;border:none;background:none;cursor:pointer;color:inherit}
+input{font:inherit;color:inherit}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- header ---------- */
+header{
+  position:sticky;top:0;z-index:20;
+  background:rgba(244,245,247,.78);
+  backdrop-filter:saturate(180%) blur(20px);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:1px solid rgba(22,24,29,.05);
+  padding:calc(14px + env(safe-area-inset-top)) 20px 14px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.1rem;letter-spacing:-.01em}
+.brand .logo{width:30px;height:30px;border-radius:9px}
+.icon-btn{
+  width:38px;height:38px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.85);box-shadow:var(--shadow);
+  color:var(--ink);
+}
+.icon-btn:active{transform:scale(.94)}
+.icon-btn svg{width:20px;height:20px}
+
+/* ---------- hero ---------- */
+.hero{padding:26px 20px 6px}
+.hero .now{font-size:3.1rem;font-weight:800;letter-spacing:-.03em;line-height:1.05}
+.hero .now small{font-size:1.15rem;font-weight:700;color:var(--sub);margin-left:6px;letter-spacing:0}
+.dest-chip{
+  margin-top:14px;display:inline-flex;align-items:center;gap:8px;
+  background:var(--card);border:1px solid var(--line);
+  padding:9px 14px;border-radius:999px;box-shadow:var(--shadow);
+  font-weight:600;font-size:.92rem;
+}
+.dest-chip svg{width:16px;height:16px;color:var(--accent)}
+.dest-chip .sep{color:var(--line)}
+.dest-chip .deadline{color:var(--accent);font-weight:700}
+.dest-chip:active{transform:scale(.97)}
+.hero .left-hint{margin-top:10px;font-size:.88rem;color:var(--sub);font-weight:500}
+.hero .left-hint b{color:var(--ink);font-weight:700}
+
+/* ---------- section ---------- */
+.section-head{
+  display:flex;align-items:baseline;justify-content:space-between;
+  padding:22px 22px 10px;
+}
+.section-head h2{font-size:.85rem;font-weight:700;color:var(--sub);letter-spacing:.06em}
+.section-head span{font-size:.8rem;color:var(--sub)}
+
+/* ---------- bus card ---------- */
+.list{padding:0 16px;display:flex;flex-direction:column;gap:12px}
+.card{
+  background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:16px 16px 14px;position:relative;overflow:hidden;
+}
+.card.recommend{outline:2px solid var(--accent);outline-offset:-2px}
+.rec-tag{
+  position:absolute;top:0;right:0;
+  background:var(--accent);color:#fff;
+  font-size:.68rem;font-weight:700;letter-spacing:.04em;
+  padding:4px 12px 5px;border-radius:0 0 0 12px;
+}
+.card-top{display:flex;align-items:center;gap:12px}
+.route-badge{
+  min-width:56px;height:44px;padding:0 10px;border-radius:12px;
+  background:var(--ink);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.15rem;font-weight:800;letter-spacing:-.01em;
+}
+.card.late .route-badge{background:#3A3D45}
+.card-eta{flex:1;min-width:0}
+.card-eta .big{font-size:1.3rem;font-weight:800;letter-spacing:-.02em}
+.card-eta .big em{font-style:normal;color:var(--accent)}
+.card-eta .big.gone{color:var(--sub);font-size:1.05rem}
+.card-eta .sub{font-size:.8rem;color:var(--sub);margin-top:2px;font-weight:500}
+.card-arrive{text-align:right}
+.card-arrive .time{font-size:1.55rem;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.card-arrive .lbl{font-size:.72rem;color:var(--sub);font-weight:600;margin-top:1px}
+.pill{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:.78rem;font-weight:700;
+  padding:4px 10px;border-radius:999px;margin-top:6px;
+}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.late{background:var(--late-soft);color:var(--late)}
+.pill.tight{background:var(--warn-soft);color:var(--warn)}
+.pill svg{width:13px;height:13px}
+
+/* timeline strip */
+.strip{
+  margin-top:14px;display:flex;align-items:center;gap:0;
+  background:var(--bg);border-radius:14px;padding:10px 12px;
+}
+.strip .leg{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
+.strip .leg .v{font-size:.86rem;font-weight:700}
+.strip .leg .k{font-size:.68rem;color:var(--sub);font-weight:600;display:flex;align-items:center;gap:4px}
+.strip .leg .k svg{width:12px;height:12px}
+.strip .arrow{color:#C6C9D2;flex:none}
+.strip .arrow svg{width:14px;height:14px}
+
+.card-actions{display:flex;gap:8px;margin-top:12px}
+.chip-btn{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:9px 0;border-radius:12px;font-size:.85rem;font-weight:700;
+  background:var(--accent-soft);color:var(--accent);
+}
+.chip-btn.ghost{background:var(--bg);color:var(--sub);flex:0 0 auto;padding:9px 14px}
+.chip-btn:active{transform:scale(.97)}
+.chip-btn svg{width:15px;height:15px}
+
+/* ---------- empty ---------- */
+.empty{
+  margin:40px 24px;text-align:center;color:var(--sub);
+}
+.empty .emo{font-size:3rem}
+.empty h3{color:var(--ink);font-size:1.05rem;font-weight:700;margin:14px 0 6px}
+.empty p{font-size:.88rem;line-height:1.6}
+
+/* ---------- FAB ---------- */
+.fab-wrap{
+  position:fixed;left:0;right:0;bottom:0;z-index:20;
+  padding:12px 20px calc(16px + env(safe-area-inset-bottom));
+  background:linear-gradient(to top, rgba(244,245,247,.95), rgba(244,245,247,0));
+  pointer-events:none;
+}
+.fab{
+  pointer-events:auto;
+  width:100%;max-width:480px;margin:0 auto;display:flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--accent);color:#fff;
+  padding:16px 0;border-radius:18px;font-size:1rem;font-weight:700;
+  box-shadow:0 8px 24px rgba(37,99,235,.35);
+}
+.fab:active{transform:scale(.98)}
+.fab svg{width:20px;height:20px}
+
+/* ---------- sheet ---------- */
+.overlay{
+  position:fixed;inset:0;z-index:40;background:rgba(22,24,29,.35);
+  opacity:0;pointer-events:none;transition:opacity .22s;
+}
+.overlay.show{opacity:1;pointer-events:auto}
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:50;
+  background:rgba(255,255,255,.86);
+  backdrop-filter:saturate(180%) blur(24px);
+  -webkit-backdrop-filter:saturate(180%) blur(24px);
+  border-radius:26px 26px 0 0;
+  box-shadow:0 -8px 40px rgba(22,24,29,.14);
+  padding:10px 20px calc(20px + env(safe-area-inset-bottom));
+  transform:translateY(105%);transition:transform .28s cubic-bezier(.32,.72,.28,1);
+  max-width:520px;margin:0 auto;
+  max-height:88dvh;overflow-y:auto;
+}
+.sheet.show{transform:translateY(0)}
+.grip{width:38px;height:5px;border-radius:3px;background:#D8DAE0;margin:4px auto 14px}
+.sheet h3{font-size:1.2rem;font-weight:800;letter-spacing:-.01em;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.sheet h3 .del{color:var(--late);font-size:.85rem;font-weight:700;display:flex;align-items:center;gap:4px}
+.sheet h3 .del svg{width:15px;height:15px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:.8rem;font-weight:700;color:var(--sub);margin-bottom:7px}
+.field input[type=text],.field input[type=time]{
+  width:100%;padding:13px 14px;border-radius:14px;border:1.5px solid var(--line);
+  background:#fff;font-size:1.05rem;font-weight:700;outline:none;
+  -webkit-appearance:none;appearance:none;
+}
+.field input:focus{border-color:var(--accent)}
+.stepper{
+  display:flex;align-items:center;gap:0;
+  background:#fff;border:1.5px solid var(--line);border-radius:14px;overflow:hidden;
+}
+.stepper button{
+  width:52px;height:50px;flex:none;display:flex;align-items:center;justify-content:center;
+  color:var(--accent);
+}
+.stepper button:active{background:var(--accent-soft)}
+.stepper button svg{width:20px;height:20px}
+.stepper input{
+  flex:1;text-align:center;border:none;outline:none;background:none;
+  font-size:1.25rem;font-weight:800;width:40px;
+}
+.stepper .unit{color:var(--sub);font-size:.85rem;font-weight:600;padding-right:6px}
+.field-row{display:flex;gap:10px}
+.field-row .field{flex:1}
+.sheet .primary{
+  width:100%;margin-top:6px;
+  background:var(--accent);color:#fff;
+  padding:15px 0;border-radius:16px;font-size:1rem;font-weight:700;
+  box-shadow:0 6px 18px rgba(37,99,235,.3);
+}
+.sheet .primary:active{transform:scale(.98)}
+.hint{font-size:.78rem;color:var(--sub);margin-top:-6px;margin-bottom:14px;line-height:1.5}
+
+@media (min-width:520px){
+  body{max-width:520px;margin:0 auto}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><img class="logo" src="icons/icon-192.png" alt=""><span>BusTrack</span></div>
+  <button class="icon-btn" id="btnSettings" aria-label="設定">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  </button>
+</header>
+
+<section class="hero">
+  <div class="now num" id="nowClock">--:--</div>
+  <button class="dest-chip" id="destChip">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v14"/><path d="M9 9h1.5M13.5 9H15M9 13h1.5M13.5 13H15M9 21v-4h6v4"/></svg>
+    <span id="destName">公司</span>
+    <span class="sep">·</span>
+    <span class="deadline num" id="destDeadline">09:00</span>
+    <span style="color:var(--sub);font-weight:500;font-size:.82rem">前抵達</span>
+  </button>
+  <div class="left-hint" id="leftHint"></div>
+</section>
+
+<div class="section-head" id="listHead" style="display:none">
+  <h2>我的公車</h2>
+  <span id="listCount"></span>
+</div>
+<main class="list" id="busList"></main>
+
+<div class="empty" id="empty" style="display:none">
+  <div class="emo">🚌</div>
+  <h3>還沒有追蹤的公車</h3>
+  <p>點下方「新增公車」，輸入路線號碼、<br>幾分鐘到站、車程與步行時間，<br>幫你算出真正抵達的時間。</p>
+</div>
+
+<div class="fab-wrap">
+  <button class="fab" id="btnAdd">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    新增公車
+  </button>
+</div>
+
+<!-- ===== bus sheet ===== -->
+<div class="overlay" id="overlay"></div>
+<div class="sheet" id="busSheet">
+  <div class="grip"></div>
+  <h3><span id="busSheetTitle">新增公車</span>
+    <button class="del" id="btnDelete" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+      刪除
+    </button>
+  </h3>
+  <div class="field">
+    <label>公車號碼</label>
+    <input type="text" id="fRoute" placeholder="例如 307、紅50" autocomplete="off">
+  </div>
+  <div class="field">
+    <label>還有幾分鐘到站</label>
+    <div class="stepper">
+      <button data-step="fEta,-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+      <input type="number" id="fEta" inputmode="numeric" min="0" max="120" value="5">
+      <span class="unit">分鐘</span>
+      <button data-step="fEta,1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+    </div>
+  </div>
+  <p class="hint">看站牌或公車 App 顯示的到站分鐘數，直接填進來。之後可隨時按「更新到站」修正。</p>
+  <div class="field-row">
+    <div class="field">
+      <label>車程（分鐘）</label>
+      <div class="stepper">
+        <button data-step="fRide,-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+        <input type="number" id="fRide" inputmode="numeric" min="1" max="180" value="20">
+        <button data-step="fRide,1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+      </div>
+    </div>
+    <div class="field">
+      <label>下車後步行（分鐘）</label>
+      <div class="stepper">
+        <button data-step="fWalk,-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+        <input type="number" id="fWalk" inputmode="numeric" min="0" max="60" value="5">
+        <button data-step="fWalk,1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+      </div>
+    </div>
+  </div>
+  <button class="primary" id="btnSaveBus">儲存</button>
+</div>
+
+<!-- ===== settings sheet ===== -->
+<div class="sheet" id="setSheet">
+  <div class="grip"></div>
+  <h3>目的地設定</h3>
+  <div class="field">
+    <label>目的地名稱</label>
+    <input type="text" id="sDest" placeholder="公司" autocomplete="off">
+  </div>
+  <div class="field">
+    <label>最晚抵達時間（上班時間）</label>
+    <input type="time" id="sTime" class="num">
+  </div>
+  <p class="hint">每張公車卡片會用「進站時間＋車程＋步行」算出實際抵達時刻，再跟這個時間比對，告訴你搭哪班不會遲到。</p>
+  <button class="primary" id="btnSaveSet">儲存</button>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const KEY = 'bustrack.v1';
+
+let state = load();
+function load(){
+  try{
+    const s = JSON.parse(localStorage.getItem(KEY));
+    if(s && s.settings && Array.isArray(s.buses)) return s;
+  }catch(e){}
+  return { settings:{ destName:'公司', arriveBy:'09:00' }, buses:[] };
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+
+const fmt = ts => {
+  const d = new Date(ts);
+  return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+};
+
+function deadlineTs(now){
+  const [h,m] = state.settings.arriveBy.split(':').map(Number);
+  const d = new Date(now); d.setHours(h,m,0,0);
+  return d.getTime();
+}
+
+function calc(bus, now){
+  const boardAt  = bus.etaSetAt + bus.etaMin*60000;          // 公車進站
+  const arriveAt = boardAt + (bus.rideMin + bus.walkMin)*60000; // 真正到目的地
+  const countdown = Math.ceil((boardAt - now)/60000);
+  const margin = Math.floor((deadlineTs(now) - arriveAt)/60000); // >=0 準時
+  return { boardAt, arriveAt, countdown, margin, departed: countdown <= 0 };
+}
+
+/* ---------- render ---------- */
+const ICON_BUS   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10"/><path d="M4 16h16v2a1 1 0 0 1-1 1h-1a1.5 1.5 0 0 1-3 0h-6a1.5 1.5 0 0 1-3 0H5a1 1 0 0 1-1-1v-2z"/><path d="M4 11h16"/></svg>';
+const ICON_WALK  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="4.5" r="1.5"/><path d="M10 20l2-5-2.5-3 1-4.5L14 9l3 2M10.5 7.5L7 9.5 6 13M12 15l3 5"/></svg>';
+const ICON_ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+const ICON_ALERT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9.2" stroke-width="1.8"/></svg>';
+const ICON_RENEW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"/></svg>';
+const ICON_EDIT  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>';
+
+function render(){
+  const now = Date.now();
+  $('nowClock').innerHTML = fmt(now) + '<small id="nowSec"></small>';
+  $('destName').textContent = state.settings.destName;
+  $('destDeadline').textContent = state.settings.arriveBy;
+
+  const dl = deadlineTs(now);
+  const leftMin = Math.floor((dl - now)/60000);
+  $('leftHint').innerHTML = leftMin >= 0
+    ? `距離最晚抵達時間還有 <b class="num">${leftMin >= 60 ? Math.floor(leftMin/60)+' 小時 '+(leftMin%60)+' 分' : leftMin+' 分鐘'}</b>`
+    : `今天的抵達時間已過 <b class="num">${Math.abs(leftMin)} 分鐘</b>`;
+
+  const list = $('busList');
+  if(state.buses.length === 0){
+    $('empty').style.display = 'block';
+    $('listHead').style.display = 'none';
+    list.innerHTML = '';
+    return;
+  }
+  $('empty').style.display = 'none';
+  $('listHead').style.display = 'flex';
+  $('listCount').textContent = state.buses.length + ' 條路線';
+
+  const items = state.buses.map(b => ({ b, c: calc(b, now) }));
+  items.sort((x,y) => x.c.boardAt - y.c.boardAt);
+
+  // 建議：還沒進站且準時的班次中，最晚進站的那班（可以最晚出門）
+  const onTime = items.filter(i => !i.c.departed && i.c.margin >= 0);
+  const recId = onTime.length ? onTime[onTime.length-1].b.id : null;
+
+  list.innerHTML = items.map(({b,c}) => {
+    let pill;
+    if(c.margin >= 8)      pill = `<span class="pill ok">${ICON_CHECK} 準時 · 提早 ${c.margin} 分</span>`;
+    else if(c.margin >= 0) pill = `<span class="pill tight">${ICON_ALERT} 剛好趕上 · 只剩 ${c.margin} 分</span>`;
+    else                   pill = `<span class="pill late">${ICON_ALERT} 會遲到 ${-c.margin} 分</span>`;
+
+    const eta = c.departed
+      ? `<div class="big gone">已進站 / 出發</div><div class="sub">上車了嗎？沒趕上請按「更新到站」</div>`
+      : `<div class="big num"><em>${c.countdown}</em> 分後進站</div><div class="sub num">預計 ${fmt(c.boardAt)} 進站</div>`;
+
+    return `
+    <article class="card ${c.margin < 0 ? 'late':''} ${b.id === recId ? 'recommend':''}">
+      ${b.id === recId ? '<div class="rec-tag">建議搭這班</div>' : ''}
+      <div class="card-top">
+        <div class="route-badge">${esc(b.route)}</div>
+        <div class="card-eta">${eta}</div>
+        <div class="card-arrive">
+          <div class="time num">${fmt(c.arriveAt)}</div>
+          <div class="lbl">抵達${esc(state.settings.destName)}</div>
+        </div>
+      </div>
+      <div style="text-align:right">${pill}</div>
+      <div class="strip num">
+        <div class="leg"><span class="v">${fmt(c.boardAt)}</span><span class="k">${ICON_BUS} 上車</span></div>
+        <div class="arrow">${ICON_ARROW}</div>
+        <div class="leg"><span class="v">${b.rideMin} 分</span><span class="k">${ICON_BUS} 車程</span></div>
+        <div class="arrow">${ICON_ARROW}</div>
+        <div class="leg"><span class="v">${b.walkMin} 分</span><span class="k">${ICON_WALK} 步行</span></div>
+        <div class="arrow">${ICON_ARROW}</div>
+        <div class="leg"><span class="v">${fmt(c.arriveAt)}</span><span class="k">抵達</span></div>
+      </div>
+      <div class="card-actions">
+        <button class="chip-btn" data-renew="${b.id}">${ICON_RENEW} 更新到站</button>
+        <button class="chip-btn ghost" data-edit="${b.id}">${ICON_EDIT} 編輯</button>
+      </div>
+    </article>`;
+  }).join('');
+}
+
+function esc(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+/* ---------- sheets ---------- */
+let editingId = null;
+function openSheet(el){ $('overlay').classList.add('show'); el.classList.add('show'); }
+function closeSheets(){
+  $('overlay').classList.remove('show');
+  document.querySelectorAll('.sheet').forEach(s => s.classList.remove('show'));
+}
+$('overlay').addEventListener('click', closeSheets);
+
+$('btnAdd').addEventListener('click', () => {
+  editingId = null;
+  $('busSheetTitle').textContent = '新增公車';
+  $('btnDelete').style.display = 'none';
+  $('fRoute').value = '';
+  $('fEta').value = 5;
+  const last = state.buses[state.buses.length-1];
+  $('fRide').value = last ? last.rideMin : 20;
+  $('fWalk').value = last ? last.walkMin : 5;
+  openSheet($('busSheet'));
+  setTimeout(() => $('fRoute').focus(), 300);
+});
+
+$('busList').addEventListener('click', e => {
+  const renew = e.target.closest('[data-renew]');
+  const edit  = e.target.closest('[data-edit]');
+  const id = renew?.dataset.renew || edit?.dataset.edit;
+  if(!id) return;
+  const b = state.buses.find(x => x.id === id);
+  if(!b) return;
+  editingId = id;
+  $('busSheetTitle').textContent = renew ? `更新 ${b.route} 到站時間` : `編輯 ${b.route}`;
+  $('btnDelete').style.display = 'flex';
+  $('fRoute').value = b.route;
+  $('fEta').value = Math.max(0, Math.ceil((b.etaSetAt + b.etaMin*60000 - Date.now())/60000));
+  $('fRide').value = b.rideMin;
+  $('fWalk').value = b.walkMin;
+  openSheet($('busSheet'));
+  if(renew) setTimeout(() => { $('fEta').focus(); $('fEta').select(); }, 300);
+});
+
+$('btnSaveBus').addEventListener('click', () => {
+  const route = $('fRoute').value.trim();
+  if(!route){ $('fRoute').focus(); return; }
+  const etaMin  = clamp($('fEta').value, 0, 120);
+  const rideMin = clamp($('fRide').value, 1, 180);
+  const walkMin = clamp($('fWalk').value, 0, 60);
+  if(editingId){
+    const b = state.buses.find(x => x.id === editingId);
+    Object.assign(b, { route, etaMin, rideMin, walkMin, etaSetAt: Date.now() });
+  }else{
+    state.buses.push({ id: 'b'+Date.now().toString(36), route, etaMin, rideMin, walkMin, etaSetAt: Date.now() });
+  }
+  save(); closeSheets(); render();
+});
+
+$('btnDelete').addEventListener('click', () => {
+  if(!editingId) return;
+  state.buses = state.buses.filter(x => x.id !== editingId);
+  save(); closeSheets(); render();
+});
+
+function clamp(v, lo, hi){ v = parseInt(v,10); if(isNaN(v)) v = lo; return Math.min(hi, Math.max(lo, v)); }
+
+/* settings */
+function openSettings(){
+  $('sDest').value = state.settings.destName;
+  $('sTime').value = state.settings.arriveBy;
+  openSheet($('setSheet'));
+}
+$('btnSettings').addEventListener('click', openSettings);
+$('destChip').addEventListener('click', openSettings);
+$('btnSaveSet').addEventListener('click', () => {
+  state.settings.destName = $('sDest').value.trim() || '公司';
+  const t = $('sTime').value;
+  if(/^\d{2}:\d{2}$/.test(t)) state.settings.arriveBy = t;
+  save(); closeSheets(); render();
+});
+
+/* steppers */
+document.querySelectorAll('[data-step]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const [id, d] = btn.dataset.step.split(',');
+    const input = $(id);
+    input.value = clamp(+input.value + +d, +input.min, +input.max);
+  });
+});
+
+/* live tick */
+render();
+setInterval(render, 10000);
+document.addEventListener('visibilitychange', () => { if(!document.hidden) render(); });
+
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
