@@ -115,6 +115,11 @@ header{
 .card-arrive{text-align:right}
 .card-arrive .time{font-size:1.55rem;font-weight:800;letter-spacing:-.02em;line-height:1.1}
 .card-arrive .lbl{font-size:.72rem;color:var(--sub);font-weight:600;margin-top:1px}
+.stops{display:flex;align-items:center;gap:8px;margin-top:12px;min-width:0}
+.stops .stop{display:flex;align-items:baseline;gap:5px;min-width:0}
+.stops .stop .k{font-size:.68rem;color:var(--sub);font-weight:700;flex:none}
+.stops .stop .v{font-size:.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stops > svg{width:13px;height:13px;color:#C6C9D2;flex:none}
 .pill{
   display:inline-flex;align-items:center;gap:5px;
   font-size:.78rem;font-weight:700;
@@ -291,6 +296,16 @@ header{
     <label>公車號碼</label>
     <input type="text" id="fRoute" placeholder="例如 307、紅50" autocomplete="off">
   </div>
+  <div class="field-row">
+    <div class="field">
+      <label>上車站牌（選填）</label>
+      <input type="text" id="fBoard" placeholder="例如 捷運昆陽站" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>下車站牌（選填）</label>
+      <input type="text" id="fAlight" placeholder="例如 市府轉運站" autocomplete="off">
+    </div>
+  </div>
   <div class="field">
     <label>還有幾分鐘到站</label>
     <div class="stepper">
@@ -379,6 +394,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 const ICON_ALERT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9.2" stroke-width="1.8"/></svg>';
 const ICON_RENEW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"/></svg>';
 const ICON_EDIT  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>';
+const ICON_TO    = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M14 6l6 6-6 6"/></svg>';
 
 function render(){
   const now = Date.now();
@@ -432,6 +448,12 @@ function render(){
         </div>
       </div>
       <div style="text-align:right">${pill}</div>
+      ${(b.boardStop || b.alightStop) ? `
+      <div class="stops">
+        <div class="stop"><span class="k">上車</span><span class="v">${esc(b.boardStop || '—')}</span></div>
+        ${ICON_TO}
+        <div class="stop"><span class="k">下車</span><span class="v">${esc(b.alightStop || '—')}</span></div>
+      </div>` : ''}
       <div class="strip num">
         <div class="leg"><span class="v">${fmt(c.boardAt)}</span><span class="k">${ICON_BUS} 上車</span></div>
         <div class="arrow">${ICON_ARROW}</div>
@@ -465,6 +487,8 @@ $('btnAdd').addEventListener('click', () => {
   $('busSheetTitle').textContent = '新增公車';
   $('btnDelete').style.display = 'none';
   $('fRoute').value = '';
+  $('fBoard').value = '';
+  $('fAlight').value = '';
   $('fEta').value = 5;
   const last = state.buses[state.buses.length-1];
   $('fRide').value = last ? last.rideMin : 20;
@@ -484,6 +508,8 @@ $('busList').addEventListener('click', e => {
   $('busSheetTitle').textContent = renew ? `更新 ${b.route} 到站時間` : `編輯 ${b.route}`;
   $('btnDelete').style.display = 'flex';
   $('fRoute').value = b.route;
+  $('fBoard').value = b.boardStop || '';
+  $('fAlight').value = b.alightStop || '';
   $('fEta').value = Math.max(0, Math.ceil((b.etaSetAt + b.etaMin*60000 - Date.now())/60000));
   $('fRide').value = b.rideMin;
   $('fWalk').value = b.walkMin;
@@ -494,14 +520,16 @@ $('busList').addEventListener('click', e => {
 $('btnSaveBus').addEventListener('click', () => {
   const route = $('fRoute').value.trim();
   if(!route){ $('fRoute').focus(); return; }
+  const boardStop  = $('fBoard').value.trim();
+  const alightStop = $('fAlight').value.trim();
   const etaMin  = clamp($('fEta').value, 0, 120);
   const rideMin = clamp($('fRide').value, 1, 180);
   const walkMin = clamp($('fWalk').value, 0, 60);
   if(editingId){
     const b = state.buses.find(x => x.id === editingId);
-    Object.assign(b, { route, etaMin, rideMin, walkMin, etaSetAt: Date.now() });
+    Object.assign(b, { route, boardStop, alightStop, etaMin, rideMin, walkMin, etaSetAt: Date.now() });
   }else{
-    state.buses.push({ id: 'b'+Date.now().toString(36), route, etaMin, rideMin, walkMin, etaSetAt: Date.now() });
+    state.buses.push({ id: 'b'+Date.now().toString(36), route, boardStop, alightStop, etaMin, rideMin, walkMin, etaSetAt: Date.now() });
   }
   save(); closeSheets(); render();
 });
