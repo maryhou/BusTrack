@@ -75,7 +75,8 @@ header{
 .hc-go.prep{color:var(--warn)}
 .hc-go.now{color:var(--late)}
 .hb-main{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-top:12px}
-.hb-count{font-size:1.85rem;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+.hb-count{font-size:1.15rem;font-weight:800;letter-spacing:-.01em;line-height:1.15;display:flex;align-items:baseline;gap:7px}
+.hb-count em{font-style:normal;font-size:2.6rem;letter-spacing:-.03em;line-height:1}
 .hb-arr{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
 .hb-arr b{font-size:1.85rem;font-weight:800;letter-spacing:-.02em;line-height:1.15}
 .hb-arr .sub{font-size:.75rem;color:rgba(255,255,255,.75);font-weight:600}
@@ -556,7 +557,7 @@ function render(){
     best = `
     <div class="hb-main">
       <div class="hb-left">
-        <div class="hb-count num">${cd} 分鐘後進站</div>
+        <div class="hb-count num"><em>${cd}</em> 分鐘後進站</div>
         <div class="hb-board num">
           <span class="hb-badge">${esc(rec.b.route)}</span>
           <span class="bt">${fmt(rec.c.boardAt)} 上車</span>
