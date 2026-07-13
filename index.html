@@ -112,6 +112,18 @@ header{
   box-shadow:0 2px 8px rgba(0,0,0,.25);
 }
 .hb-dot svg{width:15px;height:15px}
+.hb-walk{
+  position:absolute;top:50%;left:0;transform:translate(-40%,-50%);
+  width:23px;height:23px;border-radius:50%;
+  background:#fff;color:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 6px rgba(0,0,0,.2);
+}
+.hb-walk svg{width:13px;height:13px}
+.hb-endpt{
+  position:absolute;top:50%;right:0;transform:translate(40%,-50%);
+  width:10px;height:10px;border-radius:50%;background:#fff;
+}
 .hb-labels{position:relative;margin-top:20px;height:38px}
 .hb-labels .lb{position:absolute;top:0;font-size:.85rem;font-weight:800;line-height:1.3;font-variant-numeric:tabular-nums}
 .hb-labels .lb span{display:block;font-size:.68rem;color:rgba(255,255,255,.7);font-weight:600}
@@ -572,10 +584,14 @@ function render(){
       <div class="hb-bubble num" style="left:${p}%">${cd} 分鐘</div>
       <div class="hb-track">
         <div class="hb-fill" style="width:${p}%"></div>
+        ${rec.c.toStop > 0 ? `<div class="hb-walk">${ICON_WALK}</div>` : ''}
         <div class="hb-dot" style="left:${p}%">${ICON_BUS}</div>
+        <div class="hb-endpt"></div>
       </div>
       <div class="hb-labels">
-        <div class="lb start">${fmt(now)}<span>現在</span></div>
+        ${rec.c.toStop > 0
+          ? `<div class="lb start">${fmt(rec.c.boardAt - rec.c.toStop*60000)}<span>出門</span></div>`
+          : `<div class="lb start">${fmt(now)}<span>現在</span></div>`}
         <div class="lb mid" style="left:${p}%">${fmt(rec.c.boardAt)}<span>上車</span></div>
         <div class="lb end">${fmt(rec.c.arriveAt)}<span>抵達</span></div>
       </div>
