@@ -587,7 +587,7 @@ function render(){
   }else if(D.buses.length === 0){
     best = `<div class="hc-none">還沒有可推薦的班次，按下方「＋」新增公車開始追蹤。</div>`;
   }else{
-    best = `<div class="hc-none">目前沒有趕得上 ${D.arriveBy} 的班次——試試「更新到站」刷新資訊。</div>`;
+    best = `<div class="hc-none">目前沒有趕得上 ${D.arriveBy} 的班次——試試「更新」刷新到站資訊。</div>`;
   }
   $('heroCard').innerHTML = `
     <div class="hb-top">
@@ -621,7 +621,7 @@ function render(){
     else                   pill = `<span class="pill late">${ICON_ALERT} 會遲到 ${-c.margin} 分</span>`;
 
     const eta = c.departed
-      ? `<div class="big gone">已進站 / 出發</div><div class="sub">上車了嗎？沒趕上請按「更新到站」</div>`
+      ? `<div class="big gone">已進站 / 出發</div><div class="sub">上車了嗎？沒趕上請按「更新」</div>`
       : `<div class="big num"><em>${c.countdown}</em> 分後進站</div><div class="sub num">預計 ${fmt(c.boardAt)} 進站${c.toStop ? `・站牌走 ${c.toStop} 分` : ''}${!c.reachable ? '・<b style="color:var(--late)">走過去來不及</b>' : ''}</div>`;
 
     return `
@@ -652,7 +652,7 @@ function render(){
         <div class="leg"><span class="v">${fmt(c.arriveAt)}</span><span class="k">抵達</span></div>
       </div>
       <div class="card-actions">
-        <button class="chip-btn" data-renew="${b.id}">${ICON_RENEW} 更新到站</button>
+        <button class="chip-btn" data-renew="${b.id}">${ICON_RENEW} 更新</button>
         <button class="chip-btn ghost" data-edit="${b.id}">${ICON_EDIT} 編輯</button>
       </div>
     </article>`;
