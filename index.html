@@ -263,6 +263,28 @@ header{
 .stepper .unit{color:var(--sub);font-size:.85rem;font-weight:600;padding-right:6px}
 .field-row{display:flex;gap:10px}
 .field-row .field{flex:1}
+.mgr-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.mgr-row .m-name{
+  flex:1;min-width:0;padding:12px 13px;border-radius:14px;border:1.5px solid var(--line);
+  background:#fff;font-size:1rem;font-weight:700;outline:none;-webkit-appearance:none;
+}
+.mgr-row .m-time{
+  width:128px;flex:none;padding:12px 8px;border-radius:14px;border:1.5px solid var(--line);
+  background:#fff;font-size:.95rem;font-weight:700;outline:none;-webkit-appearance:none;
+}
+.mgr-row input:focus{border-color:var(--accent)}
+.mgr-row .m-del{
+  width:42px;height:42px;flex:none;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--late-soft);color:var(--late);
+}
+.mgr-row .m-del svg{width:17px;height:17px}
+.mgr-add{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:12px 0;border-radius:14px;margin-bottom:4px;
+  background:var(--accent-soft);color:var(--accent);font-size:.9rem;font-weight:700;
+}
+.mgr-add svg{width:16px;height:16px}
 .sheet .primary{
   width:100%;margin-top:6px;
   background:var(--accent);color:#fff;
@@ -392,6 +414,19 @@ header{
   </div>
   <p class="hint">每個目的地有自己的公車清單和最晚抵達時間。卡片會用「進站＋車程＋步行」算出實際抵達時刻，再跟這個時間比對。</p>
   <button class="primary" id="btnSaveSet">儲存</button>
+</div>
+
+<!-- ===== manage all destinations sheet ===== -->
+<div class="sheet" id="mgrSheet">
+  <div class="grip"></div>
+  <h3>所有目的地</h3>
+  <div id="mgrList"></div>
+  <button class="mgr-add" id="mgrAdd">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    新增目的地
+  </button>
+  <p class="hint">名稱和最晚抵達時間都可以直接改，按「儲存全部」一次生效。刪除目的地會連同它的公車清單一起移除。</p>
+  <button class="primary" id="btnSaveMgr">儲存全部</button>
 </div>
 
 <script>
@@ -619,6 +654,7 @@ function makeDismissable(sheet){
 }
 makeDismissable($('busSheet'));
 makeDismissable($('setSheet'));
+makeDismissable($('mgrSheet'));
 
 $('btnAdd').addEventListener('click', () => {
   editingId = null;
@@ -699,7 +735,64 @@ function openDestSheet(mode){
   openSheet($('setSheet'));
   if(adding) setTimeout(() => $('sDest').focus(), 300);
 }
-$('btnSettings').addEventListener('click', () => openDestSheet(state.activeDestId));
+/* 管理全部目的地（齒輪） */
+const ICON_TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>';
+function mgrRow(d){
+  return `<div class="mgr-row" data-id="${d ? d.id : 'new'}">
+    <input type="text" class="m-name" value="${d ? esc(d.name) : ''}" placeholder="例如 公司、回家、上課">
+    <input type="time" class="m-time num" value="${d ? d.arriveBy : '09:00'}">
+    <button class="m-del" aria-label="刪除">${ICON_TRASH}</button>
+  </div>`;
+}
+function openMgrSheet(){
+  $('mgrList').innerHTML = state.destinations.map(mgrRow).join('');
+  openSheet($('mgrSheet'));
+}
+$('btnSettings').addEventListener('click', openMgrSheet);
+
+$('mgrAdd').addEventListener('click', () => {
+  $('mgrList').insertAdjacentHTML('beforeend', mgrRow(null));
+  const rows = $('mgrList').querySelectorAll('.mgr-row');
+  rows[rows.length-1].querySelector('.m-name').focus();
+});
+
+$('mgrList').addEventListener('click', e => {
+  const del = e.target.closest('.m-del');
+  if(!del) return;
+  if($('mgrList').querySelectorAll('.mgr-row').length <= 1) return; // 至少留一個
+  del.closest('.mgr-row').remove();
+});
+
+$('btnSaveMgr').addEventListener('click', () => {
+  const rows = [...$('mgrList').querySelectorAll('.mgr-row')];
+  const keptIds = [];
+  rows.forEach(row => {
+    const id = row.dataset.id;
+    const name = row.querySelector('.m-name').value.trim();
+    const t = row.querySelector('.m-time').value;
+    const arriveBy = /^\d{2}:\d{2}$/.test(t) ? t : '09:00';
+    if(id === 'new'){
+      if(!name) return; // 沒填名稱的新列忽略
+      const d = { id:newId('d'), name, arriveBy, buses:[] };
+      state.destinations.push(d);
+      keptIds.push(d.id);
+    }else{
+      const d = state.destinations.find(x => x.id === id);
+      if(!d) return;
+      if(name) d.name = name; // 清空名稱視為不改名
+      d.arriveBy = arriveBy;
+      keptIds.push(id);
+    }
+  });
+  state.destinations = state.destinations.filter(d => keptIds.includes(d.id));
+  if(!state.destinations.length){
+    state.destinations.push({ id:newId('d'), name:'公司', arriveBy:'09:00', buses:[] });
+  }
+  if(!state.destinations.some(d => d.id === state.activeDestId)){
+    state.activeDestId = state.destinations[0].id;
+  }
+  save(); closeSheets(); render();
+});
 
 $('destTabs').addEventListener('click', e => {
   const add = e.target.closest('[data-adddest]');
