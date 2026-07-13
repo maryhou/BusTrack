@@ -235,6 +235,7 @@ header{
 .grip{width:38px;height:5px;border-radius:3px;background:#D8DAE0;margin:4px auto 14px}
 .sheet.dragging{transition:none}
 .sheet{touch-action:pan-y}
+#busSheet.renew .full-only{display:none}
 .sheet h3{font-size:1.2rem;font-weight:800;letter-spacing:-.01em;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
 .sheet h3 .del{color:var(--late);font-size:.85rem;font-weight:700;display:flex;align-items:center;gap:4px}
 .sheet h3 .del svg{width:15px;height:15px}
@@ -320,11 +321,11 @@ header{
       刪除
     </button>
   </h3>
-  <div class="field">
+  <div class="field full-only">
     <label>公車號碼</label>
     <input type="text" id="fRoute" placeholder="例如 307、紅50" autocomplete="off">
   </div>
-  <div class="field-row">
+  <div class="field-row full-only">
     <div class="field">
       <label>上車站牌（選填）</label>
       <input type="text" id="fBoard" placeholder="例如 捷運昆陽站" autocomplete="off">
@@ -343,7 +344,7 @@ header{
         <button data-step="fEta,1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
       </div>
     </div>
-    <div class="field">
+    <div class="field full-only">
       <label>走到站牌（分鐘）</label>
       <div class="stepper">
         <button data-step="fToStop,-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
@@ -352,8 +353,8 @@ header{
       </div>
     </div>
   </div>
-  <p class="hint">到站分鐘看站牌或公車 App 直接填；「走到站牌」是你出門走到上車站牌的時間，出門提示會用它來算。</p>
-  <div class="field-row">
+  <p class="hint full-only">到站分鐘看站牌或公車 App 直接填；「走到站牌」是你出門走到上車站牌的時間，出門提示會用它來算。</p>
+  <div class="field-row full-only">
     <div class="field">
       <label>車程（分鐘）</label>
       <div class="stepper">
@@ -623,6 +624,7 @@ makeDismissable($('setSheet'));
 
 $('btnAdd').addEventListener('click', () => {
   editingId = null;
+  $('busSheet').classList.remove('renew');
   $('busSheetTitle').textContent = '新增公車';
   $('btnDelete').style.display = 'none';
   $('fRoute').value = '';
@@ -645,8 +647,9 @@ $('busList').addEventListener('click', e => {
   const b = dest().buses.find(x => x.id === id);
   if(!b) return;
   editingId = id;
+  $('busSheet').classList.toggle('renew', !!renew);
   $('busSheetTitle').textContent = renew ? `更新 ${b.route} 到站時間` : `編輯 ${b.route}`;
-  $('btnDelete').style.display = 'flex';
+  $('btnDelete').style.display = renew ? 'none' : 'flex';
   $('fRoute').value = b.route;
   $('fBoard').value = b.boardStop || '';
   $('fAlight').value = b.alightStop || '';
