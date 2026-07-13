@@ -549,8 +549,8 @@ function render(){
     const li = rec.c.leaveIn; // 已扣掉走到站牌的時間
     const urg = li >= 10 ? ['wait','還不用出門'] : li >= 4 ? ['prep','準備出門'] : ['now','現在出門！'];
     goPill = `<span class="hc-go ${urg[0]}">${urg[1]}</span>`;
-    // 時間軸：現在(0%) → 上車(p%) → 抵達(100%)
-    const p = Math.min(88, Math.max(10, (rec.c.boardAt - now) / (rec.c.arriveAt - now) * 100));
+    // 時間軸：現在(0%) → 上車(固定 35%) → 抵達(100%)，不隨時間即時移動
+    const p = 35;
     best = `
     <div class="hb-main">
       <div class="hb-count num">${cd} 分鐘後進站</div>
