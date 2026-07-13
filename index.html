@@ -184,7 +184,9 @@ header{
 .card{
   background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
   padding:20px 16px 18px;position:relative;overflow:hidden;
+  cursor:pointer;
 }
+.card:active{transform:scale(.985)}
 .card.recommend{outline:2px solid var(--accent);outline-offset:-2px;padding-top:34px}
 .rec-tag{
   position:absolute;top:0;right:0;
@@ -204,6 +206,14 @@ header{
 .card-eta .big{font-size:1.3rem;font-weight:800;letter-spacing:-.02em}
 .card-eta .big em{font-style:normal;color:var(--accent)}
 .card-eta .big.gone{color:var(--sub);font-size:1.05rem}
+.eta-renew{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:28px;height:28px;border-radius:50%;
+  background:var(--accent-soft);color:var(--accent);
+  margin-left:8px;vertical-align:middle;transform:translateY(-1px);
+}
+.eta-renew:active{transform:translateY(-1px) scale(.92)}
+.eta-renew svg{width:14px;height:14px}
 .card-eta .sub{font-size:.8rem;color:var(--sub);margin-top:2px;font-weight:500}
 .card-arrive{text-align:right}
 .card-arrive .time{font-size:1.55rem;font-weight:800;letter-spacing:-.02em;line-height:1.1}
@@ -235,15 +245,6 @@ header{
 .strip .arrow{color:#C6C9D2;flex:none}
 .strip .arrow svg{width:14px;height:14px}
 
-.card-actions{display:flex;gap:8px;margin-top:12px}
-.chip-btn{
-  flex:1;display:flex;align-items:center;justify-content:center;gap:6px;
-  padding:9px 0;border-radius:12px;font-size:.85rem;font-weight:700;
-  background:var(--accent-soft);color:var(--accent);
-}
-.chip-btn.ghost{background:var(--bg);color:var(--sub);flex:0 0 auto;padding:9px 14px}
-.chip-btn:active{transform:scale(.97)}
-.chip-btn svg{width:15px;height:15px}
 
 /* ---------- empty ---------- */
 .empty{
@@ -540,7 +541,6 @@ const ICON_ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
 const ICON_ALERT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9.2" stroke-width="1.8"/></svg>';
 const ICON_RENEW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"/></svg>';
-const ICON_EDIT  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>';
 const ICON_TO    = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M14 6l6 6-6 6"/></svg>';
 const ICON_HOME  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg>';
 const ICON_SCHOOL= '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9l10-5 10 5-10 5L2 9z"/><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"/><path d="M22 9v5"/></svg>';
@@ -614,7 +614,7 @@ function render(){
   }else if(D.buses.length === 0){
     best = `<div class="hc-none">還沒有可推薦的班次，按下方「＋」新增公車開始追蹤。</div>`;
   }else{
-    best = `<div class="hc-none">目前沒有趕得上 ${D.arriveBy} 的班次——試試「更新」刷新到站資訊。</div>`;
+    best = `<div class="hc-none">目前沒有趕得上 ${D.arriveBy} 的班次——試試按卡片上的 ↻ 刷新到站資訊。</div>`;
   }
   $('heroCard').innerHTML = `
     <div class="hb-top">
@@ -642,17 +642,20 @@ function render(){
   $('listCount').textContent = D.buses.length + ' 條路線';
 
   list.innerHTML = items.map(({b,c}) => {
+    const walk = c.toStop ? `站牌走 ${c.toStop} 分・` : '';
     let pill;
-    if(c.margin >= 8)      pill = `<span class="pill ok">${ICON_CHECK} 準時 · 提早 ${c.margin} 分</span>`;
-    else if(c.margin >= 0) pill = `<span class="pill tight">${ICON_ALERT} 剛好趕上 · 只剩 ${c.margin} 分</span>`;
-    else                   pill = `<span class="pill late">${ICON_ALERT} 會遲到 ${-c.margin} 分</span>`;
+    if(!c.departed && !c.reachable) pill = `<span class="pill late">${ICON_WALK} ${walk}走過去來不及</span>`;
+    else if(c.margin >= 8)          pill = `<span class="pill ok">${ICON_CHECK} ${walk}早到 ${c.margin} 分到目的地</span>`;
+    else if(c.margin >= 0)          pill = `<span class="pill tight">${ICON_ALERT} ${walk}只比預計時間早 ${c.margin} 分到目的地</span>`;
+    else                            pill = `<span class="pill late">${ICON_ALERT} ${walk}會晚 ${-c.margin} 分到目的地</span>`;
 
+    const renewBtn = `<button class="eta-renew" data-renew="${b.id}" aria-label="更新到站時間">${ICON_RENEW}</button>`;
     const eta = c.departed
-      ? `<div class="big gone">已進站 / 出發</div><div class="sub">上車了嗎？沒趕上請按「更新」</div>`
-      : `<div class="big num"><em>${c.countdown}</em> 分後進站</div><div class="sub num">預計 ${fmt(c.boardAt)} 進站${c.toStop ? `・站牌走 ${c.toStop} 分` : ''}${!c.reachable ? '・<b style="color:var(--late)">走過去來不及</b>' : ''}</div>`;
+      ? `<div class="big gone">已進站 / 出發${renewBtn}</div><div class="sub">上車了嗎？沒趕上請按 ↻ 更新</div>`
+      : `<div class="big num"><em>${c.countdown}</em> 分後進站${renewBtn}</div><div class="sub num">預計 ${fmt(c.boardAt)} 進站</div>`;
 
     return `
-    <article class="card ${c.margin < 0 ? 'late':''} ${b.id === recId ? 'recommend':''}">
+    <article class="card ${c.margin < 0 ? 'late':''} ${b.id === recId ? 'recommend':''}" data-id="${b.id}">
       ${b.id === recId ? '<div class="rec-tag">建議搭這班</div>' : ''}
       <div class="card-top">
         <div class="route-badge">${esc(b.route)}</div>
@@ -677,10 +680,6 @@ function render(){
         <div class="leg"><span class="v">${b.walkMin} 分</span><span class="k">${ICON_WALK} 步行</span></div>
         <div class="arrow">${ICON_ARROW}</div>
         <div class="leg"><span class="v">${fmt(c.arriveAt)}</span><span class="k">抵達</span></div>
-      </div>
-      <div class="card-actions">
-        <button class="chip-btn" data-renew="${b.id}">${ICON_RENEW} 更新</button>
-        <button class="chip-btn ghost" data-edit="${b.id}">${ICON_EDIT} 編輯</button>
       </div>
     </article>`;
   }).join('');
@@ -760,8 +759,8 @@ $('btnAdd').addEventListener('click', () => {
 
 $('busList').addEventListener('click', e => {
   const renew = e.target.closest('[data-renew]');
-  const edit  = e.target.closest('[data-edit]');
-  const id = renew?.dataset.renew || edit?.dataset.edit;
+  const card  = e.target.closest('.card');
+  const id = renew?.dataset.renew || card?.dataset.id;
   if(!id) return;
   const b = dest().buses.find(x => x.id === id);
   if(!b) return;
