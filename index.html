@@ -61,10 +61,37 @@ header{
 .icon-btn:active{transform:scale(.94)}
 .icon-btn svg{width:20px;height:20px}
 
-/* ---------- hero ---------- */
-.hero{padding:26px 20px 6px}
-.hero .now{font-size:3.1rem;font-weight:800;letter-spacing:-.03em;line-height:1.05}
-.hero .now small{font-size:1.15rem;font-weight:700;color:var(--sub);margin-left:6px;letter-spacing:0}
+/* ---------- hero card ---------- */
+.hero-card{
+  margin:18px 16px 0;background:var(--card);border-radius:24px;
+  box-shadow:var(--shadow);padding:20px 20px 16px;
+}
+.hc-top{display:flex;justify-content:space-between;align-items:flex-start}
+.hc-k{font-size:.75rem;font-weight:700;color:var(--sub);display:flex;align-items:center;gap:5px}
+.hc-k svg{width:14px;height:14px}
+.hc-now{font-size:2.7rem;font-weight:800;letter-spacing:-.03em;line-height:1.08;margin-top:2px}
+.hc-dest{text-align:right}
+.hc-dest .hc-k{justify-content:flex-end}
+.hc-deadline{font-size:1.3rem;font-weight:800;margin-top:3px}
+.hc-deadline span{font-size:.75rem;color:var(--sub);font-weight:600}
+.hc-left{font-size:.78rem;color:var(--sub);font-weight:600;margin-top:2px}
+.hc-best{margin-top:14px;background:var(--accent-soft);border-radius:16px;padding:12px 14px}
+.hc-best-head{display:flex;align-items:center;gap:6px;font-size:.78rem;font-weight:800;color:var(--accent)}
+.hc-best-head svg{width:14px;height:14px}
+.hc-best-head .cd{margin-left:auto;font-weight:700}
+.hc-best-main{display:flex;align-items:center;gap:11px;margin-top:9px}
+.hc-badge{
+  min-width:44px;height:34px;padding:0 9px;border-radius:10px;
+  background:var(--accent);color:#fff;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:.95rem;flex:none;
+}
+.hc-times{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
+.hc-times b{font-size:1.3rem;font-weight:800;letter-spacing:-.02em}
+.hc-times .k{font-size:.72rem;color:var(--sub);font-weight:600}
+.hc-times svg{width:15px;height:15px;color:#93A8EC}
+.hc-best-sub{margin-top:8px;font-size:.75rem;color:var(--sub);font-weight:600;line-height:1.5}
+.hc-none{font-size:.85rem;color:var(--sub);font-weight:600;line-height:1.6}
 .dest-tabs{
   display:flex;gap:8px;overflow-x:auto;padding:16px 20px 14px;
   scrollbar-width:none;-webkit-overflow-scrolling:touch;
@@ -82,7 +109,6 @@ header{
 .dtab.active{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 4px 14px rgba(37,99,235,.3)}
 .dtab.active .t{color:rgba(255,255,255,.8)}
 .dtab.add{color:var(--accent);background:var(--accent-soft);border-color:transparent;box-shadow:none}
-.left-hint{margin:0 20px;font-size:.88rem;color:var(--sub);font-weight:500}
 .hero .left-hint b{color:var(--ink);font-weight:700}
 
 /* ---------- section ---------- */
@@ -258,11 +284,8 @@ header{
   </button>
 </header>
 
-<section class="hero">
-  <div class="now num" id="nowClock">--:--</div>
-</section>
+<section class="hero-card" id="heroCard"></section>
 <nav class="dest-tabs" id="destTabs"></nav>
-<div class="left-hint" id="leftHint"></div>
 
 <div class="section-head" id="listHead" style="display:none">
   <h2>我的公車</h2>
@@ -417,6 +440,7 @@ const ICON_HOME  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 const ICON_SCHOOL= '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9l10-5 10 5-10 5L2 9z"/><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"/><path d="M22 9v5"/></svg>';
 const ICON_BLDG  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v14"/><path d="M9 9h1.5M13.5 9H15M9 13h1.5M13.5 13H15M9 21v-4h6v4"/></svg>';
 const ICON_PLUS  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+const ICON_STAR  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3z"/></svg>';
 function destIcon(name){
   if(/家|home/i.test(name)) return ICON_HOME;
   if(/課|學|校|補|school/i.test(name)) return ICON_SCHOOL;
@@ -426,19 +450,56 @@ function destIcon(name){
 function render(){
   const now = Date.now();
   const D = dest();
-  $('nowClock').innerHTML = fmt(now) + '<small id="nowSec"></small>';
+  const dl = deadlineTs(now);
+  const leftMin = Math.floor((dl - now)/60000);
 
+  const items = D.buses.map(b => ({ b, c: calc(b, now) }));
+  items.sort((x,y) => x.c.boardAt - y.c.boardAt);
+  // 推薦：還沒進站且趕得上的班次中，抵達時間最貼近截止時間的那班
+  const onTime = items.filter(i => !i.c.departed && i.c.margin >= 0);
+  const rec = onTime.length ? onTime.reduce((a,b) => b.c.arriveAt > a.c.arriveAt ? b : a) : null;
+  const recId = rec ? rec.b.id : null;
+
+  /* hero card */
+  const leftTxt = leftMin >= 0
+    ? `還有 ${leftMin >= 60 ? Math.floor(leftMin/60)+' 小時 '+(leftMin%60)+' 分' : leftMin+' 分鐘'}`
+    : `已過 ${Math.abs(leftMin)} 分鐘`;
+  let best;
+  if(rec){
+    const total = rec.b.rideMin + rec.b.walkMin;
+    best = `
+    <div class="hc-best">
+      <div class="hc-best-head">${ICON_STAR}<span>最佳班次</span><span class="cd num">${rec.c.countdown} 分後進站</span></div>
+      <div class="hc-best-main">
+        <span class="hc-badge">${esc(rec.b.route)}</span>
+        <div class="hc-times num"><b>${fmt(rec.c.boardAt)}</b><span class="k">上車</span>${ICON_TO}<b>${fmt(rec.c.arriveAt)}</b><span class="k">抵達${esc(D.name)}</span></div>
+      </div>
+      <div class="hc-best-sub num">上車後 ${total} 分鐘到（車程 ${rec.b.rideMin}＋步行 ${rec.b.walkMin}）・${rec.c.margin > 0 ? `提早 ${rec.c.margin} 分抵達` : '壓線抵達'}</div>
+    </div>`;
+  }else if(D.buses.length === 0){
+    best = `<div class="hc-best hc-none">還沒有可推薦的班次，按下方「新增公車」開始追蹤。</div>`;
+  }else{
+    best = `<div class="hc-best hc-none">目前沒有趕得上 ${D.arriveBy} 的班次——試試「更新到站」刷新資訊。</div>`;
+  }
+  $('heroCard').innerHTML = `
+    <div class="hc-top">
+      <div>
+        <div class="hc-k">現在時間</div>
+        <div class="hc-now num">${fmt(now)}</div>
+      </div>
+      <div class="hc-dest">
+        <div class="hc-k">${destIcon(D.name)}<span>${esc(D.name)}</span></div>
+        <div class="hc-deadline num">${D.arriveBy}<span> 前抵達</span></div>
+        <div class="hc-left num">${leftTxt}</div>
+      </div>
+    </div>${best}`;
+
+  /* tabs */
   $('destTabs').innerHTML = state.destinations.map(d => `
     <button class="dtab ${d.id === state.activeDestId ? 'active':''}" data-dest="${d.id}">
       ${destIcon(d.name)}<span>${esc(d.name)}</span><span class="t num">${d.arriveBy}</span>
     </button>`).join('') +
     `<button class="dtab add" data-adddest>${ICON_PLUS}<span>新增</span></button>`;
-
-  const dl = deadlineTs(now);
-  const leftMin = Math.floor((dl - now)/60000);
-  $('leftHint').innerHTML = leftMin >= 0
-    ? `距離「${esc(D.name)}」最晚抵達還有 <b class="num">${leftMin >= 60 ? Math.floor(leftMin/60)+' 小時 '+(leftMin%60)+' 分' : leftMin+' 分鐘'}</b>`
-    : `「${esc(D.name)}」今天的抵達時間已過 <b class="num">${Math.abs(leftMin)} 分鐘</b>`;
 
   const list = $('busList');
   if(D.buses.length === 0){
@@ -450,13 +511,6 @@ function render(){
   $('empty').style.display = 'none';
   $('listHead').style.display = 'flex';
   $('listCount').textContent = D.buses.length + ' 條路線';
-
-  const items = D.buses.map(b => ({ b, c: calc(b, now) }));
-  items.sort((x,y) => x.c.boardAt - y.c.boardAt);
-
-  // 建議：還沒進站且準時的班次中，最晚進站的那班（可以最晚出門）
-  const onTime = items.filter(i => !i.c.departed && i.c.margin >= 0);
-  const recId = onTime.length ? onTime[onTime.length-1].b.id : null;
 
   list.innerHTML = items.map(({b,c}) => {
     let pill;
