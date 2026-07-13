@@ -83,6 +83,12 @@ header{
 .hb-board{display:flex;align-items:center;gap:9px;margin-top:12px}
 .hb-badge{background:rgba(255,255,255,.22);border-radius:9px;padding:4px 11px;font-weight:800;font-size:.95rem}
 .hb-board .bt{font-size:1rem;font-weight:700}
+.hb-stops{
+  display:flex;align-items:center;gap:8px;margin-top:12px;min-width:0;
+  font-size:.85rem;font-weight:700;color:rgba(255,255,255,.85);
+}
+.hb-stops span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hb-stops svg{width:13px;height:13px;flex:none;color:rgba(255,255,255,.55)}
 .hb-early{
   display:flex;align-items:center;gap:4px;margin-top:5px;
   color:#A9F0C7;font-size:.8rem;font-weight:700;
@@ -580,6 +586,10 @@ function render(){
         <span class="hb-early ${rec.c.margin < 8 ? 'tight':''}">${ICON_CHECK} ${rec.c.margin > 0 ? `提早 ${rec.c.margin} 分鐘` : '壓線抵達'}</span>
       </div>
     </div>
+    ${(rec.b.boardStop || rec.b.alightStop) ? `
+    <div class="hb-stops">
+      <span>${esc(rec.b.boardStop || '—')}</span>${ICON_TO}<span>${esc(rec.b.alightStop || '—')}</span>
+    </div>` : ''}
     <div class="hb-tl">
       <div class="hb-bubble num" style="left:${p}%">${cd} 分鐘</div>
       <div class="hb-track">
