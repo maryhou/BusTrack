@@ -66,32 +66,34 @@ header{
   margin:18px 16px 0;background:var(--card);border-radius:24px;
   box-shadow:var(--shadow);padding:20px 20px 16px;
 }
-.hc-top{display:flex;justify-content:space-between;align-items:flex-start}
-.hc-k{font-size:.75rem;font-weight:700;color:var(--sub);display:flex;align-items:center;gap:5px}
-.hc-k svg{width:14px;height:14px}
-.hc-now{font-size:2.7rem;font-weight:800;letter-spacing:-.03em;line-height:1.08;margin-top:2px}
-.hc-dest{text-align:right}
-.hc-dest .hc-k{justify-content:flex-end}
-.hc-deadline{font-size:1.3rem;font-weight:800;margin-top:3px}
-.hc-deadline span{font-size:.75rem;color:var(--sub);font-weight:600}
-.hc-left{font-size:.78rem;color:var(--sub);font-weight:600;margin-top:2px}
-.hc-best{margin-top:14px;background:var(--accent-soft);border-radius:16px;padding:12px 14px}
-.hc-best-head{display:flex;align-items:center;gap:6px;font-size:.78rem;font-weight:800;color:var(--accent)}
-.hc-best-head svg{width:14px;height:14px}
-.hc-best-head .cd{margin-left:auto;font-weight:700}
-.hc-best-main{display:flex;align-items:center;gap:11px;margin-top:9px}
+.hc-top{
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+  font-size:.82rem;font-weight:600;color:var(--sub);
+}
+.hc-top .hc-dest{display:flex;align-items:center;gap:5px;min-width:0;white-space:nowrap}
+.hc-top svg{width:14px;height:14px;flex:none}
+.hc-top b{color:var(--ink);font-weight:800}
+.hc-label{margin-top:15px;font-size:.75rem;color:var(--accent);font-weight:800;display:flex;align-items:center;gap:5px}
+.hc-label svg{width:14px;height:14px}
+.hc-count-row{display:flex;align-items:center;gap:12px;margin-top:8px}
 .hc-badge{
-  min-width:44px;height:34px;padding:0 9px;border-radius:10px;
+  min-width:52px;height:42px;padding:0 10px;border-radius:12px;
   background:var(--accent);color:#fff;
   display:inline-flex;align-items:center;justify-content:center;
-  font-weight:800;font-size:.95rem;flex:none;
+  font-weight:800;font-size:1.1rem;flex:none;
 }
-.hc-times{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
-.hc-times b{font-size:1.3rem;font-weight:800;letter-spacing:-.02em}
+.hc-count{font-size:1.35rem;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.hc-count em{font-style:normal;font-size:2.3rem;color:var(--accent)}
+.hc-go{margin-left:auto;flex:none;font-size:.8rem;font-weight:800;padding:7px 13px;border-radius:999px}
+.hc-go.wait{background:var(--ok-soft);color:var(--ok)}
+.hc-go.prep{background:var(--warn-soft);color:var(--warn)}
+.hc-go.now{background:var(--late-soft);color:var(--late)}
+.hc-times{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0;margin-top:13px}
+.hc-times b{font-size:1.35rem;font-weight:800;letter-spacing:-.02em}
 .hc-times .k{font-size:.72rem;color:var(--sub);font-weight:600}
 .hc-times svg{width:15px;height:15px;color:#93A8EC}
-.hc-best-sub{margin-top:8px;font-size:.75rem;color:var(--sub);font-weight:600;line-height:1.5}
-.hc-none{font-size:.85rem;color:var(--sub);font-weight:600;line-height:1.6}
+.hc-best-sub{margin-top:7px;font-size:.75rem;color:var(--sub);font-weight:600;line-height:1.5}
+.hc-none{margin-top:14px;background:var(--accent-soft);border-radius:16px;padding:12px 14px;font-size:.85rem;color:var(--sub);font-weight:600;line-height:1.6}
 .dest-tabs{
   display:flex;gap:8px;overflow-x:auto;padding:16px 20px 24px;
   scrollbar-width:none;-webkit-overflow-scrolling:touch;
@@ -467,31 +469,26 @@ function render(){
   let best;
   if(rec){
     const total = rec.b.rideMin + rec.b.walkMin;
+    const cd = rec.c.countdown;
+    const urg = cd >= 10 ? ['wait','還不用出門'] : cd >= 4 ? ['prep','準備出門'] : ['now','現在出門！'];
     best = `
-    <div class="hc-best">
-      <div class="hc-best-head">${ICON_STAR}<span>最佳班次</span><span class="cd num">${rec.c.countdown} 分後進站</span></div>
-      <div class="hc-best-main">
-        <span class="hc-badge">${esc(rec.b.route)}</span>
-        <div class="hc-times num"><b>${fmt(rec.c.boardAt)}</b><span class="k">上車</span>${ICON_TO}<b>${fmt(rec.c.arriveAt)}</b><span class="k">抵達${esc(D.name)}</span></div>
-      </div>
-      <div class="hc-best-sub num">上車後 ${total} 分鐘到（車程 ${rec.b.rideMin}＋步行 ${rec.b.walkMin}）・${rec.c.margin > 0 ? `提早 ${rec.c.margin} 分抵達` : '壓線抵達'}</div>
-    </div>`;
+    <div class="hc-label">${ICON_STAR}<span>最佳班次</span></div>
+    <div class="hc-count-row">
+      <span class="hc-badge">${esc(rec.b.route)}</span>
+      <div class="hc-count num"><em>${cd}</em> 分後進站</div>
+      <span class="hc-go ${urg[0]}">${urg[1]}</span>
+    </div>
+    <div class="hc-times num"><b>${fmt(rec.c.boardAt)}</b><span class="k">上車</span>${ICON_TO}<b>${fmt(rec.c.arriveAt)}</b><span class="k">抵達${esc(D.name)}</span></div>
+    <div class="hc-best-sub num">${rec.c.margin > 0 ? `提早 ${rec.c.margin} 分抵達` : '壓線抵達'}・上車後 ${total} 分鐘到（車程 ${rec.b.rideMin}＋步行 ${rec.b.walkMin}）</div>`;
   }else if(D.buses.length === 0){
-    best = `<div class="hc-best hc-none">還沒有可推薦的班次，按下方「新增公車」開始追蹤。</div>`;
+    best = `<div class="hc-none">還沒有可推薦的班次，按下方「新增公車」開始追蹤。</div>`;
   }else{
-    best = `<div class="hc-best hc-none">目前沒有趕得上 ${D.arriveBy} 的班次——試試「更新到站」刷新資訊。</div>`;
+    best = `<div class="hc-none">目前沒有趕得上 ${D.arriveBy} 的班次——試試「更新到站」刷新資訊。</div>`;
   }
   $('heroCard').innerHTML = `
     <div class="hc-top">
-      <div>
-        <div class="hc-k">現在時間</div>
-        <div class="hc-now num">${fmt(now)}</div>
-      </div>
-      <div class="hc-dest">
-        <div class="hc-k">${destIcon(D.name)}<span>${esc(D.name)}</span></div>
-        <div class="hc-deadline num">${D.arriveBy}<span> 前抵達</span></div>
-        <div class="hc-left num">${leftTxt}</div>
-      </div>
+      <span class="num">現在 ${fmt(now)}</span>
+      <span class="hc-dest">${destIcon(D.name)}<span>${esc(D.name)}</span><b class="num">${D.arriveBy}</b><span>前・${leftTxt}</span></span>
     </div>${best}`;
 
   /* tabs */
