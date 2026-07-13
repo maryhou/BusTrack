@@ -334,16 +334,25 @@ header{
       <input type="text" id="fAlight" placeholder="例如 市府轉運站" autocomplete="off">
     </div>
   </div>
-  <div class="field">
-    <label>還有幾分鐘到站</label>
-    <div class="stepper">
-      <button data-step="fEta,-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
-      <input type="number" id="fEta" inputmode="numeric" min="0" max="120" value="5">
-      <span class="unit">分鐘</span>
-      <button data-step="fEta,1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+  <div class="field-row">
+    <div class="field">
+      <label>還有幾分鐘到站</label>
+      <div class="stepper">
+        <button data-step="fEta,-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+        <input type="number" id="fEta" inputmode="numeric" min="0" max="120" value="5">
+        <button data-step="fEta,1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+      </div>
+    </div>
+    <div class="field">
+      <label>走到站牌（分鐘）</label>
+      <div class="stepper">
+        <button data-step="fToStop,-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+        <input type="number" id="fToStop" inputmode="numeric" min="0" max="30" value="5">
+        <button data-step="fToStop,1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+      </div>
     </div>
   </div>
-  <p class="hint">看站牌或公車 App 顯示的到站分鐘數，直接填進來。之後可隨時按「更新到站」修正。</p>
+  <p class="hint">到站分鐘看站牌或公車 App 直接填；「走到站牌」是你出門走到上車站牌的時間，出門提示會用它來算。</p>
   <div class="field-row">
     <div class="field">
       <label>車程（分鐘）</label>
@@ -426,7 +435,10 @@ function calc(bus, now){
   const arriveAt = boardAt + (bus.rideMin + bus.walkMin)*60000; // 真正到目的地
   const countdown = Math.ceil((boardAt - now)/60000);
   const margin = Math.floor((deadlineTs(now) - arriveAt)/60000); // >=0 準時
-  return { boardAt, arriveAt, countdown, margin, departed: countdown <= 0 };
+  const toStop = bus.walkToStop || 0;                        // 走到站牌
+  const leaveIn = countdown - toStop;                        // 幾分鐘內要出門
+  return { boardAt, arriveAt, countdown, margin, toStop, leaveIn,
+           departed: countdown <= 0, reachable: leaveIn >= 0 };
 }
 
 /* ---------- render ---------- */
@@ -457,8 +469,8 @@ function render(){
 
   const items = D.buses.map(b => ({ b, c: calc(b, now) }));
   items.sort((x,y) => x.c.boardAt - y.c.boardAt);
-  // 推薦：還沒進站且趕得上的班次中，抵達時間最貼近截止時間的那班
-  const onTime = items.filter(i => !i.c.departed && i.c.margin >= 0);
+  // 推薦：還沒進站、走得到、趕得上的班次中，抵達時間最貼近截止時間的那班
+  const onTime = items.filter(i => !i.c.departed && i.c.reachable && i.c.margin >= 0);
   const rec = onTime.length ? onTime.reduce((a,b) => b.c.arriveAt > a.c.arriveAt ? b : a) : null;
   const recId = rec ? rec.b.id : null;
 
@@ -470,7 +482,8 @@ function render(){
   if(rec){
     const total = rec.b.rideMin + rec.b.walkMin;
     const cd = rec.c.countdown;
-    const urg = cd >= 10 ? ['wait','還不用出門'] : cd >= 4 ? ['prep','準備出門'] : ['now','現在出門！'];
+    const li = rec.c.leaveIn; // 已扣掉走到站牌的時間
+    const urg = li >= 10 ? ['wait','還不用出門'] : li >= 4 ? ['prep','準備出門'] : ['now','現在出門！'];
     best = `
     <div class="hc-label">${ICON_STAR}<span>最佳班次</span></div>
     <div class="hc-count-row">
@@ -479,7 +492,7 @@ function render(){
       <span class="hc-go ${urg[0]}">${urg[1]}</span>
     </div>
     <div class="hc-times num"><b>${fmt(rec.c.boardAt)}</b><span class="k">上車</span>${ICON_TO}<b>${fmt(rec.c.arriveAt)}</b><span class="k">抵達${esc(D.name)}</span></div>
-    <div class="hc-best-sub num">${rec.c.margin > 0 ? `提早 ${rec.c.margin} 分抵達` : '壓線抵達'}・上車後 ${total} 分鐘到（車程 ${rec.b.rideMin}＋步行 ${rec.b.walkMin}）</div>`;
+    <div class="hc-best-sub num">${rec.c.margin > 0 ? `提早 ${rec.c.margin} 分抵達` : '壓線抵達'}・上車後 ${total} 分鐘到（車程 ${rec.b.rideMin}＋步行 ${rec.b.walkMin}）${rec.c.toStop ? `・走到站牌 ${rec.c.toStop} 分` : ''}</div>`;
   }else if(D.buses.length === 0){
     best = `<div class="hc-none">還沒有可推薦的班次，按下方「新增公車」開始追蹤。</div>`;
   }else{
@@ -517,7 +530,7 @@ function render(){
 
     const eta = c.departed
       ? `<div class="big gone">已進站 / 出發</div><div class="sub">上車了嗎？沒趕上請按「更新到站」</div>`
-      : `<div class="big num"><em>${c.countdown}</em> 分後進站</div><div class="sub num">預計 ${fmt(c.boardAt)} 進站</div>`;
+      : `<div class="big num"><em>${c.countdown}</em> 分後進站</div><div class="sub num">預計 ${fmt(c.boardAt)} 進站${c.toStop ? `・站牌走 ${c.toStop} 分` : ''}${!c.reachable ? '・<b style="color:var(--late)">走過去來不及</b>' : ''}</div>`;
 
     return `
     <article class="card ${c.margin < 0 ? 'late':''} ${b.id === recId ? 'recommend':''}">
@@ -619,6 +632,7 @@ $('btnAdd').addEventListener('click', () => {
   const last = dest().buses[dest().buses.length-1];
   $('fRide').value = last ? last.rideMin : 20;
   $('fWalk').value = last ? last.walkMin : 5;
+  $('fToStop').value = last ? (last.walkToStop || 0) : 5;
   openSheet($('busSheet'));
   setTimeout(() => $('fRoute').focus(), 300);
 });
@@ -639,6 +653,7 @@ $('busList').addEventListener('click', e => {
   $('fEta').value = Math.max(0, Math.ceil((b.etaSetAt + b.etaMin*60000 - Date.now())/60000));
   $('fRide').value = b.rideMin;
   $('fWalk').value = b.walkMin;
+  $('fToStop').value = b.walkToStop || 0;
   openSheet($('busSheet'));
   if(renew) setTimeout(() => { $('fEta').focus(); $('fEta').select(); }, 300);
 });
@@ -651,11 +666,12 @@ $('btnSaveBus').addEventListener('click', () => {
   const etaMin  = clamp($('fEta').value, 0, 120);
   const rideMin = clamp($('fRide').value, 1, 180);
   const walkMin = clamp($('fWalk').value, 0, 60);
+  const walkToStop = clamp($('fToStop').value, 0, 30);
   if(editingId){
     const b = dest().buses.find(x => x.id === editingId);
-    Object.assign(b, { route, boardStop, alightStop, etaMin, rideMin, walkMin, etaSetAt: Date.now() });
+    Object.assign(b, { route, boardStop, alightStop, etaMin, rideMin, walkMin, walkToStop, etaSetAt: Date.now() });
   }else{
-    dest().buses.push({ id: newId('b'), route, boardStop, alightStop, etaMin, rideMin, walkMin, etaSetAt: Date.now() });
+    dest().buses.push({ id: newId('b'), route, boardStop, alightStop, etaMin, rideMin, walkMin, walkToStop, etaSetAt: Date.now() });
   }
   save(); closeSheets(); render();
 });
