@@ -1,6 +1,6 @@
 # BusTrack — Session Handoff
 
-> 最後更新：2026-07-13（Claude session）
+> 最後更新：2026-07-13（Claude session：清單卡片改版＋pill 文案定稿）
 
 ## 專案是什麼
 
