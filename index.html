@@ -76,14 +76,14 @@ header{
 .hc-go.now{color:var(--late)}
 .hb-main{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-top:12px}
 .hb-count{font-size:1.85rem;font-weight:800;letter-spacing:-.02em;line-height:1.15}
-.hb-arr{text-align:right;flex:none}
-.hb-arr b{display:block;font-size:1.85rem;font-weight:800;letter-spacing:-.02em;line-height:1.15}
-.hb-arr span{font-size:.75rem;color:rgba(255,255,255,.75);font-weight:600}
-.hb-board{display:flex;align-items:center;gap:9px;margin-top:10px}
+.hb-arr{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.hb-arr b{font-size:1.85rem;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+.hb-arr .sub{font-size:.75rem;color:rgba(255,255,255,.75);font-weight:600}
+.hb-board{display:flex;align-items:center;gap:9px;margin-top:12px}
 .hb-badge{background:rgba(255,255,255,.22);border-radius:9px;padding:4px 11px;font-weight:800;font-size:.95rem}
 .hb-board .bt{font-size:1rem;font-weight:700}
 .hb-early{
-  margin-left:auto;display:flex;align-items:center;gap:4px;
+  display:flex;align-items:center;gap:4px;margin-top:6px;
   background:var(--ok-soft);color:var(--ok);
   font-size:.78rem;font-weight:800;padding:5px 11px;border-radius:999px;
 }
@@ -553,13 +553,17 @@ function render(){
     const p = 35;
     best = `
     <div class="hb-main">
-      <div class="hb-count num">${cd} 分鐘後進站</div>
-      <div class="hb-arr num"><b>${fmt(rec.c.arriveAt)}</b><span>抵達${esc(D.name)}</span></div>
-    </div>
-    <div class="hb-board num">
-      <span class="hb-badge">${esc(rec.b.route)}</span>
-      <span class="bt">${fmt(rec.c.boardAt)} 上車</span>
-      <span class="hb-early ${rec.c.margin < 8 ? 'tight':''}">${ICON_CHECK} ${rec.c.margin > 0 ? `提早 ${rec.c.margin} 分鐘` : '壓線抵達'}</span>
+      <div class="hb-left">
+        <div class="hb-count num">${cd} 分鐘後進站</div>
+        <div class="hb-board num">
+          <span class="hb-badge">${esc(rec.b.route)}</span>
+          <span class="bt">${fmt(rec.c.boardAt)} 上車</span>
+        </div>
+      </div>
+      <div class="hb-arr num">
+        <b>${fmt(rec.c.arriveAt)}</b><span class="sub">抵達${esc(D.name)}</span>
+        <span class="hb-early ${rec.c.margin < 8 ? 'tight':''}">${ICON_CHECK} ${rec.c.margin > 0 ? `提早 ${rec.c.margin} 分鐘` : '壓線抵達'}</span>
+      </div>
     </div>
     <div class="hb-tl">
       <div class="hb-bubble num" style="left:${p}%">${cd} 分鐘</div>
