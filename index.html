@@ -198,20 +198,19 @@ header{
 
 /* ---------- FAB ---------- */
 .fab-wrap{
-  position:fixed;left:0;right:0;bottom:0;z-index:20;
-  padding:12px 20px calc(16px + env(safe-area-inset-bottom));
-  background:linear-gradient(to top, rgba(244,245,247,.95), rgba(244,245,247,0));
+  position:fixed;right:0;bottom:0;z-index:20;
+  padding:0 20px calc(20px + env(safe-area-inset-bottom));
   pointer-events:none;
 }
 .fab{
   pointer-events:auto;
-  width:100%;max-width:480px;margin:0 auto;display:flex;align-items:center;justify-content:center;gap:8px;
+  width:58px;height:58px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
   background:var(--accent);color:#fff;
-  padding:16px 0;border-radius:18px;font-size:1rem;font-weight:700;
-  box-shadow:0 8px 24px rgba(37,99,235,.35);
+  box-shadow:0 6px 20px rgba(37,99,235,.4);
 }
-.fab:active{transform:scale(.98)}
-.fab svg{width:20px;height:20px}
+.fab:active{transform:scale(.92)}
+.fab svg{width:24px;height:24px}
 
 /* ---------- sheet ---------- */
 .overlay{
@@ -305,9 +304,8 @@ header{
 </div>
 
 <div class="fab-wrap">
-  <button class="fab" id="btnAdd">
+  <button class="fab" id="btnAdd" aria-label="新增公車">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-    新增公車
   </button>
 </div>
 
