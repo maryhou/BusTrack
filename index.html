@@ -582,7 +582,7 @@ function render(){
     <div class="hb-foot num">
       <span class="item">${ICON_BUS} 車程 ${rec.b.rideMin} 分鐘</span>
       <span class="item">${ICON_WALK} 步行 ${rec.b.walkMin} 分鐘</span>
-      <span class="item upd">${ICON_RENEW} 更新於 ${fmt(rec.b.etaSetAt)}</span>
+      <span class="item upd">${ICON_RENEW} ${fmt(rec.b.etaSetAt)}</span>
     </div>`;
   }else if(D.buses.length === 0){
     best = `<div class="hc-none">還沒有可推薦的班次，按下方「＋」新增公車開始追蹤。</div>`;
